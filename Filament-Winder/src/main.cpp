@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include "Arduino.h"
 #include "AccelStepper.h"
 
 #define Stp_EN 22
@@ -6,20 +6,18 @@
 #define StpX_S 4
 #define StpX_D 5
 #define StpX_HomeLim 18 //INT pins (18,19,20,21 on ArduinoMega) are used for optimization  
-#define
+#define StpX_HardLim 19
 
 #define StpZ_S 6 
 #define StpZ_D 7
-#define StpZ_Lim 19
-
+#define StpZ_HomeLim 20
+#define StpZ_HardLim 21
 
 #define StpC_S 8
 #define StpC_D 9
-#define StpC_Lim 20
 
 //#define StpB_Stp 10 //Not used currently
 //#define StpB_Dir 11 //Not used currently
-//#define StpB_Lim 21
 
 AccelStepper StpX(AccelStepper::DRIVER, StpX_S, StpX_D);
 AccelStepper StpZ(AccelStepper::DRIVER, StpZ_S, StpZ_D);
@@ -40,10 +38,10 @@ inline void homing(int limitSW, AccelStepper Stepper){
 
 void setup() {
 
-  pinMode(StpX_Lim, INPUT_PULLUP);
-  pinMode(StpZ_Lim, INPUT_PULLUP);
-  pinMode(StpC_Lim, INPUT_PULLUP);
-  //pinMode(StpB_Lim, INPUT_PULLUP);
+  pinMode(StpX_HomeLim, INPUT_PULLUP);
+  pinMode(StpX_HardLim, INPUT_PULLUP);
+  pinMode(StpZ_HomeLim, INPUT_PULLUP);
+  pinMode(StpZ_HardLim, INPUT_PULLUP);
   
   Serial.begin(115200);
   while(!Serial); //hold the device in loop until Serial is started
@@ -84,8 +82,6 @@ void setup() {
   
   //Home X
   digitalWrite(Stp_EN, LOW);
-  homing(StpX_Lim,StpC);
-  //StpC.setSpeed(5000);
   //Home Z
 }
 
