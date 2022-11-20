@@ -18,14 +18,15 @@
 
 //#define StpB_Stp 10 //Not used currently
 //#define StpB_Dir 11 //Not used currently
-Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 140000, 14000);
-
+Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 300000.0, 500000.0);
+Axis xAxis(Stp_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 14000.0, 5000000.0);
 
 void setup() {
   Serial.begin(115200);
   while(!Serial); //hold the device in loop until Serial is started
   Serial.println("Init");
-
+  
+  xAxis.init();
   zAxis.init();
 
   Serial.println("Setup complete, Position the axis away from home. Press any button when finished");
@@ -34,7 +35,7 @@ void setup() {
   while (Serial.available() && Serial.read()); // empty buffer again
 
   zAxis.enableAxis();
-
+  xAxis.enableAxis();
   //enable all steppers
   Serial.println("Stepper enabled, press any button to start Homing");
   while (Serial.available() && Serial.read()); // empty buffer
@@ -44,8 +45,9 @@ void setup() {
   Serial.println("Current Action: Homing X then Z");
   
   //Home X
-  zAxis.homing();
+  xAxis.homing();
   //Home Z
+  zAxis.homing();
 }
 
 void loop() {

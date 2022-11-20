@@ -58,20 +58,27 @@ void Axis::calibrate(){
 
 void Axis::homing(){ 
     enableAxis();
+    Serial.println("Axis enabled");
 
-    Axis::_stepper.setSpeed(100000);
-    while(digitalRead(_homeLimPin) == HIGH){
-        Axis::_stepper.runSpeed();
-    } 
-    _stepper.setSpeed(0);
-    _stepper.setCurrentPosition(0);
-
-    _stepper.move(1000);
-
-    _stepper.setSpeed(5000);
+    _stepper.setSpeed(-1000.0); // move towards home
     while(digitalRead(_homeLimPin) == HIGH){
         _stepper.runSpeed();
     } 
+    _stepper.setSpeed(0.0);
+
+    _stepper.setCurrentPosition(0);
+
+    _stepper.move(2000.0);
+    while(_stepper.distanceToGo() > 0){
+        _stepper.run();
+    }
+
+    _stepper.setSpeed(-500.0);
+    
+    while(digitalRead(_homeLimPin) == HIGH){
+        _stepper.runSpeed();
+    }
+    _stepper.setSpeed(0.0);
     _stepper.setCurrentPosition(0);
 
 }

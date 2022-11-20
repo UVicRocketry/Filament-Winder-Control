@@ -38,9 +38,6 @@ class Axis {
         float _maxAccel;
         float _stepToPosRatio = 0.0;
         AccelStepper _stepper;//(uint8_t uInterface,uint8_t uPulsePin,uint8_t uDirPin);
-
-
-
 };
 /*
 Stepper properties (should I use Axis?)
