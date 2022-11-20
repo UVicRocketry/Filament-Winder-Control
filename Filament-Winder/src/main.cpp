@@ -1,5 +1,5 @@
 #include "Arduino.h"
-#include "AccelStepper.h"
+#include "Axis.h"
 
 #define Stp_EN 22
 
@@ -18,61 +18,24 @@
 
 //#define StpB_Stp 10 //Not used currently
 //#define StpB_Dir 11 //Not used currently
-
-AccelStepper StpX(AccelStepper::DRIVER, StpX_S, StpX_D);
-AccelStepper StpZ(AccelStepper::DRIVER, StpZ_S, StpZ_D);
-AccelStepper StpC(AccelStepper::DRIVER, StpC_S, StpC_D);
-//AccelStepper StpB(AccelStepper::DRIVER, StpB_S, StpB_D);
-
-inline void homing(int limitSW, AccelStepper Stepper){
-  Stepper.setSpeed(5000);
-    
-  while(digitalRead(18) == HIGH){ //while the limit SW is not touched
-    Stepper.runSpeed();
-    //Stepper.run();
-  }
-  Stepper.setSpeed(0);
-  Stepper.setCurrentPosition(0);
-}
+Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 140000, 14000);
 
 
 void setup() {
-
-  pinMode(StpX_HomeLim, INPUT_PULLUP);
-  pinMode(StpX_HardLim, INPUT_PULLUP);
-  pinMode(StpZ_HomeLim, INPUT_PULLUP);
-  pinMode(StpZ_HardLim, INPUT_PULLUP);
-  
   Serial.begin(115200);
   while(!Serial); //hold the device in loop until Serial is started
   Serial.println("Init");
 
-  StpX.setEnablePin(Stp_EN);
-  StpX.setSpeed(140000);
-  StpX.setAcceleration(14000);
+  zAxis.init();
 
-  StpZ.setEnablePin(Stp_EN);
-  StpZ.setSpeed(140000);
-  StpZ.setAcceleration(14000);
-
-  StpC.setEnablePin(Stp_EN);
-  StpC.setMaxSpeed(300000);
-  StpC.setAcceleration(500000);   
-
-  //disable all the output to let user to position freely
-  StpX.disableOutputs();
-  StpZ.disableOutputs();
-  StpC.disableOutputs();
   Serial.println("Setup complete, Position the axis away from home. Press any button when finished");
   while (Serial.available() && Serial.read()); // empty buffer
   while (!Serial.available());                 // wait for data
   while (Serial.available() && Serial.read()); // empty buffer again
 
-  //enable all steppers
-  StpX.enableOutputs();
-  StpZ.enableOutputs();
-  StpC.enableOutputs();
+  zAxis.enableAxis();
 
+  //enable all steppers
   Serial.println("Stepper enabled, press any button to start Homing");
   while (Serial.available() && Serial.read()); // empty buffer
   while (!Serial.available());                 // wait for data
@@ -81,7 +44,7 @@ void setup() {
   Serial.println("Current Action: Homing X then Z");
   
   //Home X
-  digitalWrite(Stp_EN, LOW);
+  zAxis.homing();
   //Home Z
 }
 

@@ -4,6 +4,9 @@
 #endif
 #include "AccelStepper.h"
 
+
+class AccelStepper;
+
 class Axis;
 
 class Axis {
@@ -21,6 +24,7 @@ class Axis {
         void moveWithSpeed(float speed);
         void enableAxis();
         void disableAxis();
+        void eStop();
 
 //add limit switch
     private:
@@ -33,8 +37,8 @@ class Axis {
         float _maxSpeed;
         float _maxAccel;
         float _stepToPosRatio = 0.0;
+        AccelStepper _stepper;//(uint8_t uInterface,uint8_t uPulsePin,uint8_t uDirPin);
 
-        AccelStepper stepper;
 
 
 };
