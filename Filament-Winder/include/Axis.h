@@ -21,10 +21,12 @@ class Axis {
         void calibrate();
         void homing();
         void moveToPos(float pos);
-        void moveWithSpeed(float speed);
+        void moveSpeed(float speed);
         void enableAxis();
         void disableAxis();
+        void stop();
         void eStop();
+        void setSpeed(float speed);
 
 //add limit switch
     private:
@@ -32,8 +34,8 @@ class Axis {
         uint8_t _enablePin;
         uint8_t _dirPin;
         uint8_t _pulsePin;
-        uint8_t _homeLimPin;
-        uint8_t _hardLimPin;
+        uint8_t _homeLimPin = 0xFF;
+        uint8_t _hardLimPin = 0xFF;
         float _maxSpeed;
         float _maxAccel;
         float _stepToPosRatio = 0.0;

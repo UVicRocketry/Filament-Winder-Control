@@ -21,15 +21,21 @@ void Axis::disableAxis(){ //TODO check how to use the .disableOutput properly
     _state = false;
 }
 
+void Axis::stop(){
+    _stepper.stop();
+}
+
 void Axis::eStop(){
     disableAxis();
 }
+
 void Axis::init(){ //add all pin definition and pin set up
 // stepper pins
     _stepper.setEnablePin(_enablePin);
     _stepper.setMaxSpeed(_maxSpeed);
     _stepper.setAcceleration(_maxAccel);
     _stepper.setPinsInverted(false, false, true);
+    //_stepper.setCurrentPosition(0);
 // limit SW
     pinMode(_homeLimPin, INPUT_PULLUP);
     pinMode(_hardLimPin, INPUT_PULLUP);
@@ -68,7 +74,7 @@ void Axis::homing(){
 
     _stepper.setCurrentPosition(0);
 
-    _stepper.move(2000.0);
+    _stepper.move(2000);
     while(_stepper.distanceToGo() > 0){
         _stepper.run();
     }
@@ -83,10 +89,26 @@ void Axis::homing(){
 
 }
 
-void Axis::moveToPos(float pos){
-
+void Axis::setSpeed(float speed){ //TODO Update this function for the big Machine class
+    _stepper.setSpeed(speed);
 }
 
-void Axis::moveWithSpeed(float speed){
+//pos relative to the home coordinates //fix so takes in inches and converts
+void Axis::moveToPos(float pos){
+    _stepper.moveTo(long(pos));
+    //_stepper.setSpeed(1000.0);
+    
+    while(_stepper.distanceToGo() != 0){
+        //Serial.print(_stepper.speed()); Serial.print(",");
+        //Serial.println(_stepper.currentPosition());
+        _stepper.run();
+    }
+    Serial.print(_stepper.speed()); Serial.print(",");
+    Serial.println(_stepper.currentPosition());
+}
 
+void Axis::moveSpeed(float speed){
+    //Serial.println();
+    _stepper.setSpeed(speed);
+    _stepper.runSpeed();
 }
