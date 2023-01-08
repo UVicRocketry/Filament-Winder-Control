@@ -52,6 +52,28 @@ void Axis::calibrate(){
 
 }
 
+void Axis::setSpeed(float speed){ //TODO Update this function for the big Machine class
+    _stepper.setSpeed(speed);
+}
+
+bool Axis::runSpeed(){
+    return _stepper.runSpeed();
+}
+
+long Axis::distanceToGo(){
+    return _stepper.distanceToGo();
+}
+
+void Axis::run(){
+    _stepper.run();
+}
+
+long Axis::currentPosition(){
+    return _stepper.currentPosition();
+    //TODO later convert steps to inch!
+}
+
+
 /*Homing function will run the follow
 1) enable steper
 2) move to home limit switch (fast speed)
@@ -89,24 +111,13 @@ void Axis::homing(){
 
 }
 
-void Axis::setSpeed(float speed){ //TODO Update this function for the big Machine class
-    _stepper.setSpeed(speed);
-}
-
 //pos relative to the home coordinates //fix so takes in inches and converts
 void Axis::moveToPos(float pos){
     _stepper.moveTo(long(pos));
-    //_stepper.setSpeed(1000.0);
-    
-    while(_stepper.distanceToGo() != 0){
-        //Serial.print(_stepper.speed()); Serial.print(",");
-        //Serial.println(_stepper.currentPosition());
-        _stepper.run();
-    }
-    Serial.print(_stepper.speed()); Serial.print(",");
-    Serial.println(_stepper.currentPosition());
+    _stepper.run();
 }
 
+//used in jogging where speed changes with input
 void Axis::moveSpeed(float speed){
     //Serial.println();
     _stepper.setSpeed(speed);

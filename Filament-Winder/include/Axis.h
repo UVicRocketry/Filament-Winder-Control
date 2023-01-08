@@ -25,8 +25,12 @@ class Axis {
         void enableAxis();
         void disableAxis();
         void stop();
+        long currentPosition();
         void eStop();
+        void run();
+        long distanceToGo();
         void setSpeed(float speed);
+        bool runSpeed();
 
 //add limit switch
     private:

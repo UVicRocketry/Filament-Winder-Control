@@ -38,12 +38,14 @@
 //tuned
 Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 14000.0, 20000.0); //needs adjustment
 Axis xAxis(Stp_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 14000.0, 20000.0); //tuned
-//Axis CAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 140000.0, 14000.0);
+Axis cAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 140000.0, 14000.0);
 Axis bAxis(Stp_EN, StpB_D, StpB_S,0xFF,0xFF, 14000.0, 20000.0);
 
 void jog();
 void spindleOn();
 void spindleOff();
+void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed);
+void sanding(int numberOfPasses, float RPM, float linearSpeed);
 
 void setup() {
   Serial.begin(115200);
@@ -54,6 +56,7 @@ void setup() {
   xAxis.init();
   zAxis.init();
   bAxis.init();
+  cAxis.init();
 
 //initialize joystick
   pinMode(buttonPin, INPUT);
@@ -69,19 +72,19 @@ void setup() {
   zAxis.enableAxis();
   xAxis.enableAxis();
   bAxis.enableAxis();
+  cAxis.enableAxis();
 
   Serial.println("Stepper enabled, Homing carriage");
   Serial.println("Current Action: Homing X then Z");
   
   //Home X
-  xAxis.homing();
+  //xAxis.homing();
   //Home Z
-  zAxis.homing();
+  //zAxis.homing();
 
   //jog  
   Serial.println("Jog()");
-  jog();
-  delay(2000);
+  //jog();
   //zAxis.moveToPos(1600);
   //delay(1000);
   /*zAxis.moveToPos(400);
@@ -91,10 +94,14 @@ void setup() {
   xAxis.moveToPos(-400);
   spindleOff();*/
   Serial.println("loop()");
+  //spinAndMove(zAxis.currentPosition(), (zAxis.currentPosition()+6000), 1000, 1000);
+  //spinAndMove(zAxis.currentPosition(), (zAxis.currentPosition()-6000), 1000, 1000);
+  sanding(4, 1000, 1000);
 
 }
 
 void loop() {
+  /*
   Serial.println("setting temp");
   float temp = 2000.0;
   Serial.println("1st chunk");
@@ -106,7 +113,7 @@ void loop() {
   Serial.println("2nd chunk");
   xAxis.moveToPos(0.0);
   zAxis.moveToPos(0.0);
-  
+  */
 }
 
 
@@ -145,4 +152,60 @@ void spindleOn(){
 
 void spindleOff(){
   digitalWrite(relayPin, HIGH);
+}
+
+void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed){
+  cAxis.setSpeed(RPM);
+  zAxis.moveToPos(stockEnd);
+  while(zAxis.distanceToGo() != 0){
+    cAxis.runSpeed();
+    zAxis.run();
+  }
+}
+
+void sanding(int numberOfPasses, float RPM, float linearSpeed){
+  //find stock zero
+  jog();
+  float stockZeroX = xAxis.currentPosition();
+  float stockZeroZ = zAxis.currentPosition();
+  delay(1000);
+  jog();
+  float stockEndZ = zAxis.currentPosition();
+  float back = stockZeroX - 800;
+
+  //back up
+  while(xAxis.currentPosition() != back){
+    xAxis.moveToPos(back);
+  }
+
+  //move to stock zero z
+  while(zAxis.currentPosition() != stockZeroZ){
+    zAxis.moveToPos(stockZeroZ);
+  }
+  //start spinning c
+  //wait until full speed
+  //move to stock zero x
+  //spin c and move x at the same time
+  while(xAxis.currentPosition() != stockZeroX){
+    cAxis.run();
+    xAxis.moveToPos(stockZeroX);
+  }
+  
+
+  bool dir = 0; // 0 --> positive z direction, 1 --> negative z direction
+  while(numberOfPasses >= 0){
+    if(dir == 1){
+      spinAndMove(stockZeroZ, stockEndZ, RPM, linearSpeed);
+    }else if(dir == 0){
+      spinAndMove(stockEndZ, stockZeroZ, RPM, linearSpeed);
+    }
+    dir = !dir;
+    numberOfPasses--;
+  }
+  //back x
+  //stop motor
+  while(xAxis.currentPosition() != back){
+    cAxis.runSpeed();
+    xAxis.moveToPos(back);
+  }
 }
