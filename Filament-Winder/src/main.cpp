@@ -22,8 +22,6 @@
 //b axis
 #define StpB_S 10
 #define StpB_D 11 
-//#define StpB_Stp 10 //Not used currently
-//#define StpB_Dir 11 //Not used currently
 
 //joystick (not currently using button)
 #define vrx A10
@@ -35,17 +33,31 @@
 //button
 #define buttonPin 13
 
-//tuned
-Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 14000.0, 20000.0); //needs adjustment
-Axis xAxis(Stp_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 14000.0, 20000.0); //tuned
-Axis cAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 140000.0, 14000.0);
-Axis bAxis(Stp_EN, StpB_D, StpB_S,0xFF,0xFF, 14000.0, 20000.0);
+//TODO: all motors have different step per rotation ratios. the ones filled in below were just eyeballed
+Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 1600.0, 679.9548143 , 14000.0, 20000.0); //TODO: calibrate axis better!!!
+Axis xAxis(Stp_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 1600.0, 679.9548143, 14000.0, 20000.0); //TODO: calibrate axis
+Axis cAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 7000.0, 7000.0, 140000.0, 14000.0); //add in to step conversion, could be used for circumference!!! this motor has a gearbox!!!
+Axis bAxis(Stp_EN, StpB_D, StpB_S,0xFF,0xFF, 6500.0, 6500.0, 14000.0, 20000.0); //add in to step conversion, could be used for circumference!!!
 
-void jog();
+struct point{
+  float xPos;
+  float zPos;
+}point;
+
+struct holePatternData{
+  float hole_diam;
+  float axial_location;
+  int num_holes;
+  float offset_angle; 
+}holePatternData;
+
+void jog(bool xEnable, bool zEnable);
 void spindleOn();
 void spindleOff();
 void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed);
 void sanding(int numberOfPasses, float RPM, float linearSpeed);
+void toolchange();
+void holePattern(float fuselageDiameter, struct operation);
 
 void setup() {
   Serial.begin(115200);
@@ -77,15 +89,19 @@ void setup() {
   Serial.println("Stepper enabled, Homing carriage");
   Serial.println("Current Action: Homing X then Z");
   
+  //set home coordinates
+
   //Home X
   //xAxis.homing();
   //Home Z
   //zAxis.homing();
 
   //jog  
-  Serial.println("Jog()");
   //jog();
-  //zAxis.moveToPos(1600);
+  delay(1000);
+  while(1){
+    jog(true, false);
+  }
   //delay(1000);
   /*zAxis.moveToPos(400);
   //spindleOn();
@@ -93,53 +109,41 @@ void setup() {
   delay(2000);
   xAxis.moveToPos(-400);
   spindleOff();*/
-  Serial.println("loop()");
+  //Serial.println("loop()");
   //spinAndMove(zAxis.currentPosition(), (zAxis.currentPosition()+6000), 1000, 1000);
   //spinAndMove(zAxis.currentPosition(), (zAxis.currentPosition()-6000), 1000, 1000);
-  sanding(4, 1000, 1000);
+  //sanding(4, 1000, 1000);
 
 }
 
-void loop() {
-  /*
-  Serial.println("setting temp");
-  float temp = 2000.0;
-  Serial.println("1st chunk");
-  zAxis.moveToPos(temp);
-  bAxis.moveToPos(1800.0);
-  xAxis.moveToPos(temp+3000.0);
-  Serial.println("1st chunk end");
-  delay(5000);
-  Serial.println("2nd chunk");
-  xAxis.moveToPos(0.0);
-  zAxis.moveToPos(0.0);
-  */
-}
+void loop() {}
 
-
-void jog(){
+// input: axis enable (true = on, false = off) in order x,z
+void jog(bool xEnable, bool zEnable){
   while(digitalRead(buttonPin) != HIGH){
     int axisMaxSpeed = 2000;
     int x = analogRead(vrx);
     int z = analogRead(vry);
     int deadband = 20;
     //move x
-    if( ( (abs(512 - x) > deadband) && (digitalRead(StpX_HomeLim) == HIGH) && (digitalRead(StpX_HardLim) == HIGH) )
+    if( ( (xEnable == true) && (abs(512 - x) > deadband) && (digitalRead(StpX_HomeLim) == HIGH) && (digitalRead(StpX_HardLim) == HIGH) )
       ||
-      ( (x > (512 + deadband)) && (digitalRead(StpX_HomeLim) == LOW) )
+      ( (xEnable == true) &&  (x > (512 + deadband)) && (digitalRead(StpX_HomeLim) == LOW) )
       ||
-      ( (x < (512 - deadband)) && (digitalRead(StpX_HardLim) == LOW) ) )
+      ( (xEnable == true) &&  (x < (512 - deadband)) && (digitalRead(StpX_HardLim) == LOW) ) )
       {
-      xAxis.moveSpeed(map(x, 0, 1023, -axisMaxSpeed, axisMaxSpeed));
+      xAxis.setSpeed(map(x, 0, 1023, -axisMaxSpeed, axisMaxSpeed)); //TODO: CHANGE FROM STEPS TO INCH
+      xAxis.run();
     }
     //move z
-    if( ( (abs(512 - z) > deadband) && (digitalRead(StpZ_HomeLim) == HIGH) && (digitalRead(StpZ_HardLim) == HIGH) )
+    if( ( (zEnable == true) && (abs(512 - z) > deadband) && (digitalRead(StpZ_HomeLim) == HIGH) && (digitalRead(StpZ_HardLim) == HIGH) )
       ||
-      ( (z > (512 + deadband)) && (digitalRead(StpZ_HardLim) == LOW) )
+      ( (zEnable == true) && (z > (512 + deadband)) && (digitalRead(StpZ_HardLim) == LOW) )
       ||
-      ( (z < (512 - deadband)) && (digitalRead(StpZ_HomeLim) == LOW) ) )
+      ( (zEnable == true) && (z < (512 - deadband)) && (digitalRead(StpZ_HomeLim) == LOW) ) )
       {
-      zAxis.moveSpeed(map(z, 0, 1023, axisMaxSpeed, -axisMaxSpeed));
+      zAxis.setSpeed(map(z, 0, 1023, axisMaxSpeed, -axisMaxSpeed)); //TODO: CHANGE FROM STEPS TO INCH
+      zAxis.run();
     }
   }
   zAxis.setSpeed(0.0);
@@ -165,11 +169,11 @@ void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed){
 
 void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //find stock zero
-  jog();
+  jog(true, true);
   float stockZeroX = xAxis.currentPosition();
   float stockZeroZ = zAxis.currentPosition();
   delay(1000);
-  jog();
+  jog(true, true);
   float stockEndZ = zAxis.currentPosition();
   float back = stockZeroX - 800;
 
@@ -206,6 +210,80 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //stop motor
   while(xAxis.currentPosition() != back){
     cAxis.runSpeed();
-    xAxis.moveToPos(back);
+    xAxis.moveTo(back);
   }
+}
+
+//TODO arbitrary axis speed, change later
+void toolchange(float zWorkHome){ //pass in z zero
+  //user jogs the tool back //TODO:CHANGE TO MOVE TOOL BACK TO HOME LIMIT
+  xAxis.moveTo(200);
+  xAxis.setSpeed(200); //do i even need to set speed everytime? just set it after jogging?
+  while(digitalRead(StpX_HomeLim) == HIGH){
+    xAxis.run();
+  }
+  jog(false,true);
+  //change tool then hit button
+  spindleOff();
+  Serial.println("Spindle Off: Change tool and Press Button To Resume Program");
+  while (digitalRead(buttonPin) != HIGH);
+  //machine moves back to original work z
+  zAxis.moveTo(zWorkHome);
+  zAxis.setSpeed(200);
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }
+  //user jogs to new x zero
+  jog(false,true);
+    //done!
+
+}
+
+//already zeroed when this function is called
+void holePattern(float previousHoleDiam, float fuselageDiameter){
+  //check if we need to preform a toolchange
+  if(previousHoleDiam != holePatternData.hole_diam){
+    toolchange();
+  }
+
+  //move to position of holes (relative to fuselage zero)
+  zAxis.moveToPos(holePatternData.axial_location);
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.moveToPos(holePatternData.axial_location);
+  }
+
+  //if more than one hole, need to figure out spacing for the pattern to work
+  if(holePatternData.num_holes > 1){
+    float holeSpacing = cAxis.stepPerRevolution/holePatternData.num_holes;
+
+    if( holePatternData.offset_angle != 0.0){
+      cAxis.moveToPos(holePatternData.offset_angle);
+      while(cAxis.distanceToGo() != 0.0){
+        cAxis.moveToPos(holePatternData.offset_angle);
+      }
+    }
+
+    spindleOn();
+    for(int x = holePatternData.num_holes; x>0; x--){
+      //drill
+      xAxis.moveToPos(fuselageDiameter - 400);
+      delay(1000);
+      xAxis.moveToPos(fuselageDiameter + 800);
+
+      x--;
+      cAxis.moveIncremental(holeSpacing);
+    }
+    
+
+  }else{
+    //just drill the hole
+    if( holePatternData.offset_angle != 0.0){
+      cAxis.moveToPos(holePatternData.offset_angle);
+    }
+    //drill
+      xAxis.moveToPos(fuselageDiameter - 400);
+      delay(1000);
+      xAxis.moveToPos(fuselageDiameter + 800);
+  }
+  
 }

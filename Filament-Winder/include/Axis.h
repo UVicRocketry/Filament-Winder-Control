@@ -14,18 +14,24 @@ class Axis {
         float pos = 0.0;
         float speed = 0.0;
         float accel = 0.0;
+        float stepPerRevolution = 200.0;
+        float inToStep = 0.0;
 
-        Axis(uint8_t uEnablePin, uint8_t uDirPin, uint8_t uPulsePin, uint8_t uHomeLimPin, uint8_t uHardLimPin, float uMaxSpeed, float uMaxAccel );
+        bool _state = false;
+
+        Axis(uint8_t uEnablePin, uint8_t uDirPin, uint8_t uPulsePin, uint8_t uHomeLimPin, uint8_t uHardLimPin, float uStepPerRevolution, float uInToStep, float uMaxSpeed, float uMaxAccel);
 
         void init();
         void calibrate();
         void homing();
         void moveToPos(float pos);
+        void moveIncremental(float steps);
         void moveSpeed(float speed);
         void enableAxis();
         void disableAxis();
         void stop();
         long currentPosition();
+        void moveTo(float pos);
         void eStop();
         void run();
         long distanceToGo();
@@ -34,7 +40,6 @@ class Axis {
 
 //add limit switch
     private:
-        bool _state = false;
         uint8_t _enablePin;
         uint8_t _dirPin;
         uint8_t _pulsePin;
