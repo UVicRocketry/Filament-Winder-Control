@@ -22,21 +22,20 @@ class Axis {
         Axis(uint8_t uEnablePin, uint8_t uDirPin, uint8_t uPulsePin, uint8_t uHomeLimPin, uint8_t uHardLimPin, float uStepPerRevolution, float uInToStep, float uMaxSpeed, float uMaxAccel);
 
         void init();
-        void calibrate();
-        void homing();
-        void moveToPos(float pos);
-        void moveIncremental(float steps);
-        void moveSpeed(float speed);
         void enableAxis();
         void disableAxis();
-        void stop();
+
         long currentPosition();
-        void moveTo(float pos);
-        void eStop();
-        void run();
         long distanceToGo();
+
         void setSpeed(float speed);
         bool runSpeed();
+
+        void moveAbsolute(float pos);
+        void moveIncremental(float steps);
+        void run();
+
+        void homing();
 
 //add limit switch
     private:

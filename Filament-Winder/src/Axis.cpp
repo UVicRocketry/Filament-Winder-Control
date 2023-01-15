@@ -14,26 +14,6 @@ Axis::Axis(uint8_t uEnablePin, uint8_t uDirPin, uint8_t uPulsePin, uint8_t uHome
 
 };
 
-//return true if axis is enabled
-void Axis::enableAxis(){
-    _stepper.enableOutputs();
-    _state = true;
-}
-
-//return false if axis disabled
-void Axis::disableAxis(){ //TODO check how to use the .disableOutput properly
-    _stepper.disableOutputs();
-    _state = false;
-}
-
-void Axis::stop(){
-    _stepper.stop();
-}
-
-void Axis::eStop(){
-    disableAxis();
-}
-
 void Axis::init(){ //add all pin definition and pin set up
 // stepper pins
     _stepper.setEnablePin(_enablePin);
@@ -47,14 +27,29 @@ void Axis::init(){ //add all pin definition and pin set up
 
     //attachInterrupt(digitalPinToInterrupt(_hardLimPin),digitalWrite(_enablePin, HIGH),FALLING);
 
-
 // disable all stepper
     disableAxis();
 }
 
+//return true if axis is enabled
+void Axis::enableAxis(){
+    _stepper.enableOutputs();
+    _state = true;
+}
 
-void Axis::calibrate(){
+//return false if axis disabled
+void Axis::disableAxis(){ //TODO check how to use the .disableOutput properly
+    _stepper.disableOutputs();
+    _state = false;
+}
 
+long Axis::currentPosition(){
+    return (_stepper.currentPosition()/inToStep );
+    //TODO later convert steps to inch!
+}
+
+long Axis::distanceToGo(){
+    return _stepper.distanceToGo();
 }
 
 void Axis::setSpeed(float speed){ 
@@ -67,23 +62,20 @@ bool Axis::runSpeed(){
     return _stepper.runSpeed();
 }
 
-long Axis::distanceToGo(){
-    return _stepper.distanceToGo();
+//set move to absolute position
+void Axis::moveAbsolute(float pos){
+    //TODO later convert steps//degrees to inch!
+    _stepper.moveTo( (long(pos)) /* inToStep*/ );
+}
+
+//set incremental distance to go, TODO: CHANGE TO NON BLOCKING
+void Axis::moveIncremental(float steps){
+    //TODO Change input to degrees and add conversion here
+    _stepper.move(long(steps));
 }
 
 void Axis::run(){
     _stepper.run();
-}
-
-long Axis::currentPosition(){
-    return (_stepper.currentPosition()/inToStep );
-    //TODO later convert steps to inch!
-}
-
-//absolute
-void Axis::moveTo(float pos){
-    //TODO later convert steps//degrees to inch!
-    _stepper.moveTo( (long(pos)) /* inToStep*/ );
 }
 
 /*Homing function will run the follow
@@ -121,29 +113,4 @@ void Axis::homing(){
     _stepper.setSpeed(0.0);
     _stepper.setCurrentPosition(0);
 
-}
-
-//OLD LOGIC MAYBE DELETE LATER
-
-//absolute and not blocking
-//moves relative to current location
-
-//TODO: THIS FUNCTION IS COMBINATION OF OTHER TWO FUNCTIONS ABOVE, UPDATE CODE AND DELETE
-void Axis::moveToPos(float pos){
-    _stepper.moveTo( (long(pos)) * inToStep );
-    _stepper.run();
-}
-
-//incremental and blocking, TODO: CHANGE TO NON BLOCKING
-void Axis::moveIncremental(float steps){
-    //TODO Change input to degrees and add conversion here
-    _stepper.move(long(steps));
-}
-
-//used in jogging where speed changes with input
-    //TODO Change input to inch/s and add conversion here
-void Axis::moveSpeed(float speed){
-    //Serial.println();
-    _stepper.setSpeed(speed);
-    _stepper.runSpeed();
 }

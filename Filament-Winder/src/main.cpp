@@ -92,32 +92,32 @@ void setup() {
   //set home coordinates
 
   //Home X
-  //xAxis.homing();
+  xAxis.homing();
   //Home Z
-  //zAxis.homing();
+  zAxis.homing();
 
   //jog  
-  //jog();
-  delay(1000);
-  while(1){
-    jog(true, false);
+  //jog(true, true);
+  cAxis.setSpeed(200);
+  zAxis.setSpeed(220);
+    cAxis.moveAbsolute(8000);
+    zAxis.moveAbsolute(2000);
+  while(cAxis.distanceToGo() != 0.0){
+    zAxis.run();
+    cAxis.run();
   }
-  //delay(1000);
-  /*zAxis.moveToPos(400);
-  //spindleOn();
-  xAxis.moveToPos(400);
-  delay(2000);
-  xAxis.moveToPos(-400);
-  spindleOff();*/
-  //Serial.println("loop()");
-  //spinAndMove(zAxis.currentPosition(), (zAxis.currentPosition()+6000), 1000, 1000);
-  //spinAndMove(zAxis.currentPosition(), (zAxis.currentPosition()-6000), 1000, 1000);
-  //sanding(4, 1000, 1000);
-
+  
+  delay(5000);
+  zAxis.setSpeed(220);
+      zAxis.moveAbsolute(2000);
+  while(1){
+    zAxis.run();
+  }
 }
 
 void loop() {}
 
+//TODO: ADD TO AXIS.CPP, PASS IN 
 // input: axis enable (true = on, false = off) in order x,z
 void jog(bool xEnable, bool zEnable){
   while(digitalRead(buttonPin) != HIGH){
@@ -160,7 +160,7 @@ void spindleOff(){
 
 void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed){
   cAxis.setSpeed(RPM);
-  zAxis.moveToPos(stockEnd);
+  zAxis.moveAbsolute(stockEnd);
   while(zAxis.distanceToGo() != 0){
     cAxis.runSpeed();
     zAxis.run();
@@ -179,12 +179,14 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
 
   //back up
   while(xAxis.currentPosition() != back){
-    xAxis.moveToPos(back);
+    xAxis.moveAbsolute(back);
+    xAxis.run();
   }
 
   //move to stock zero z
   while(zAxis.currentPosition() != stockZeroZ){
-    zAxis.moveToPos(stockZeroZ);
+    zAxis.moveAbsolute(stockZeroZ);
+    zAxis.run();
   }
   //start spinning c
   //wait until full speed
@@ -192,9 +194,9 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //spin c and move x at the same time
   while(xAxis.currentPosition() != stockZeroX){
     cAxis.run();
-    xAxis.moveToPos(stockZeroX);
+    xAxis.moveAbsolute(stockZeroX);
+    xAxis.run();
   }
-  
 
   bool dir = 0; // 0 --> positive z direction, 1 --> negative z direction
   while(numberOfPasses >= 0){
@@ -210,14 +212,14 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //stop motor
   while(xAxis.currentPosition() != back){
     cAxis.runSpeed();
-    xAxis.moveTo(back);
+    xAxis.moveAbsolute(back);
   }
 }
 
 //TODO arbitrary axis speed, change later
 void toolchange(float zWorkHome){ //pass in z zero
   //user jogs the tool back //TODO:CHANGE TO MOVE TOOL BACK TO HOME LIMIT
-  xAxis.moveTo(200);
+  xAxis.moveAbsolute(200);
   xAxis.setSpeed(200); //do i even need to set speed everytime? just set it after jogging?
   while(digitalRead(StpX_HomeLim) == HIGH){
     xAxis.run();
@@ -228,7 +230,7 @@ void toolchange(float zWorkHome){ //pass in z zero
   Serial.println("Spindle Off: Change tool and Press Button To Resume Program");
   while (digitalRead(buttonPin) != HIGH);
   //machine moves back to original work z
-  zAxis.moveTo(zWorkHome);
+  zAxis.moveAbsolute(zWorkHome);
   zAxis.setSpeed(200);
   while(zAxis.distanceToGo() != 0.0){
     zAxis.run();
@@ -247,9 +249,10 @@ void holePattern(float previousHoleDiam, float fuselageDiameter){
   }
 
   //move to position of holes (relative to fuselage zero)
-  zAxis.moveToPos(holePatternData.axial_location);
+  zAxis.setSpeed(200); //arbitrary speed
+  zAxis.moveIncremental(holePatternData.axial_location);
   while(zAxis.distanceToGo() != 0.0){
-    zAxis.moveToPos(holePatternData.axial_location);
+    zAxis.run();
   }
 
   //if more than one hole, need to figure out spacing for the pattern to work
@@ -257,18 +260,18 @@ void holePattern(float previousHoleDiam, float fuselageDiameter){
     float holeSpacing = cAxis.stepPerRevolution/holePatternData.num_holes;
 
     if( holePatternData.offset_angle != 0.0){
-      cAxis.moveToPos(holePatternData.offset_angle);
+      cAxis.moveAbsolute(holePatternData.offset_angle);
       while(cAxis.distanceToGo() != 0.0){
-        cAxis.moveToPos(holePatternData.offset_angle);
+        cAxis.run();
       }
     }
 
     spindleOn();
     for(int x = holePatternData.num_holes; x>0; x--){
       //drill
-      xAxis.moveToPos(fuselageDiameter - 400);
+      xAxis.moveIncremental(fuselageDiameter - 400);
       delay(1000);
-      xAxis.moveToPos(fuselageDiameter + 800);
+      xAxis.moveIncremental(fuselageDiameter + 800);
 
       x--;
       cAxis.moveIncremental(holeSpacing);
@@ -278,12 +281,12 @@ void holePattern(float previousHoleDiam, float fuselageDiameter){
   }else{
     //just drill the hole
     if( holePatternData.offset_angle != 0.0){
-      cAxis.moveToPos(holePatternData.offset_angle);
+      cAxis.moveIncremental(holePatternData.offset_angle);
     }
     //drill
-      xAxis.moveToPos(fuselageDiameter - 400);
+      xAxis.moveIncremental(fuselageDiameter - 400);
       delay(1000);
-      xAxis.moveToPos(fuselageDiameter + 800);
+      xAxis.moveIncremental(fuselageDiameter + 800);
   }
   
 }
