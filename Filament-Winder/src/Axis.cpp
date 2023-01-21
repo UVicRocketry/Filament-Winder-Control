@@ -8,7 +8,7 @@ Axis::Axis(uint8_t uEnablePin, uint8_t uDirPin, uint8_t uPulsePin, uint8_t uHome
     _homeLimPin = uHomeLimPin;
     _hardLimPin = uHardLimPin;
     stepPerRevolution = uStepPerRevolution;
-    inToStep = uInToStep;
+    inToStep = uInToStep; //CURRENTLY UNUSED, THIS WILL CONVERT QTY TO STEP RENAME 
     _maxSpeed = uMaxSpeed;
     _maxAccel = uMaxAccel;
 
@@ -42,9 +42,9 @@ void Axis::disableAxis(){ //TODO check how to use the .disableOutput properly
     _stepper.disableOutputs();
     _state = false;
 }
-
+//the current motor position relative to home zero
 long Axis::currentPosition(){
-    return (_stepper.currentPosition()/inToStep );
+    return (_stepper.currentPosition() );
     //TODO later convert steps to inch!
 }
 
@@ -57,18 +57,23 @@ void Axis::setSpeed(float speed){
     _stepper.setSpeed(speed);
 }
 
+void Axis:: setAcceleration(float acceleration){
+    _stepper.setAcceleration(acceleration);
+}
+
+//TODO: MAKE NOT BLOCKING OR JUST SET SPEED AND RUN?
 bool Axis::runSpeed(){
     //TODO: CONVERT INCH/S // DEGREE/S TO STEP/S
     return _stepper.runSpeed();
 }
 
-//set move to absolute position
+//set absolute position
 void Axis::moveAbsolute(float pos){
     //TODO later convert steps//degrees to inch!
-    _stepper.moveTo( (long(pos)) /* inToStep*/ );
+    _stepper.moveTo( (long(pos)));
 }
 
-//set incremental distance to go, TODO: CHANGE TO NON BLOCKING
+//set incremental distance
 void Axis::moveIncremental(float steps){
     //TODO Change input to degrees and add conversion here
     _stepper.move(long(steps));

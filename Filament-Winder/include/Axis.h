@@ -29,6 +29,7 @@ class Axis {
         long distanceToGo();
 
         void setSpeed(float speed);
+        void setAcceleration(float acceleration);
         bool runSpeed();
 
         void moveAbsolute(float pos);
@@ -36,6 +37,7 @@ class Axis {
         void run();
 
         void homing();
+        void jog();
 
 //add limit switch
     private:
