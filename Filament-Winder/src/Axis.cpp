@@ -42,6 +42,7 @@ void Axis::disableAxis(){ //TODO check how to use the .disableOutput properly
     _stepper.disableOutputs();
     _state = false;
 }
+
 //the current motor position relative to home zero
 long Axis::currentPosition(){
     return (_stepper.currentPosition() );
@@ -70,7 +71,7 @@ bool Axis::runSpeed(){
 //set absolute position
 void Axis::moveAbsolute(float pos){
     //TODO later convert steps//degrees to inch!
-    _stepper.moveTo( (long(pos)));
+    _stepper.moveTo((long(pos)));
 }
 
 //set incremental distance

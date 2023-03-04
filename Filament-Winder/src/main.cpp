@@ -39,10 +39,10 @@
 //most definitely an issue with giving a speed that is too small for the distance or something, check how the library sets acceleration
 
 
-//TODO: all motors have different step per rotation ratios. the ones filled in below were just eyeballed
-Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 1600.0, 679.9548143 , 14000.0, 20000.0); //TODO: calibrate axis better!!!
+//TODO: all motors have different step per rotation ratios. the ones filled in below were just eyeballed 
+Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 1600.0, 678.9821813 , 14000.0, 20000.0); //TODO: calibrate axis better!!!
 Axis xAxis(Stp_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 1600.0, 679.9548143, 14000.0, 20000.0); //TODO: calibrate axis
-Axis cAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 7000.0, 7000.0, 140000.0, 14000.0); //add in to step conversion, could be used for circumference!!! this motor has a gearbox!!!
+Axis cAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 6800.0, 7000.0, 140000.0, 14000.0); //add in to step conversion, could be used for circumference!!! this motor has a gearbox!!!
 Axis bAxis(Stp_EN, StpB_D, StpB_S,0xFF,0xFF, 6500.0, 6500.0, 14000.0, 20000.0); //add in to step conversion, could be used for circumference!!!
 
 struct point{
@@ -57,13 +57,13 @@ struct holePatternData{
   float offset_angle; 
 }holePatternData;
 
-void jog(bool xEnable, bool zEnable);
 void spindleOn();
 void spindleOff();
 bool checkLimits();
+void jog(bool xEnable, bool zEnable);
 void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed);
 void sanding(int numberOfPasses, float RPM, float linearSpeed);
-void toolchange();
+void toolchange(float zWorkHome);
 void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam, float axial_location, int num_holes, float offset_angle);
 
 void setup() {
@@ -96,70 +96,96 @@ void setup() {
   Serial.println("Stepper enabled, Homing carriage");
   Serial.println("Current Action: Homing X then Z");
   
-  //set home coordinates
+  
 
   //Home X
   xAxis.homing();
   //Home Z
   zAxis.homing();
+  /*
+  cAxis.moveIncremental(20000);
+  cAxis.setSpeed(500);
+  while(cAxis.distanceToGo() != 0.0){
+    cAxis.run();
+  }
+  */
 
-  
+  //jog 
+  //jog(true, true);
+  /*
+  Serial.println(zAxis.currentPosition());
+  zAxis.setSpeed(-750);
+  zAxis.moveIncremental(-678.9821813*50);
+  while((zAxis.distanceToGo() != 0.0)){
+    zAxis.run();
+  }
+  Serial.println(zAxis.currentPosition());
+  */ 
 
-  //jog  
-  jog(true, true);
 
   //sanding(4, -420690000, 1000);
 
 
   //void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam, float axial_location, int num_holes, float offset_angle)
-  holePattern(0.204, xAxis.currentPosition(), 0.204, 2000, 12, 0.0);
+  
+  //tim's recovery piston hole pattern
+  
+  jog(true, true);
+/*
+  zAxis.moveIncremental(float(zAxis.inToStep*2.65275));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }
+*/
+  holePattern(0.204, -2.65275, 0.204, 60, 2, 0.0);
+
+  zAxis.moveIncremental(float(zAxis.inToStep*0.4));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }
+
+  holePattern(0.204, -0.4, 0.204, 60, 2, 0.0);
+  
+
+  //jog(true, true);
+  //holePattern(0.204, xAxis.currentPosition(), 0.204, 0, 6, 0.0);
 
 
   //test program vvv
-  /*
-  zAxis.moveIncremental(2000);
-  zAxis.setSpeed(500);
-
-
-
-  cAxis.moveIncremental(20000);
-  cAxis.setSpeed(500);
-  while(zAxis.distanceToGo() != 0.0){
-    cAxis.run();
-    zAxis.run();
-  }
   
-  zAxis.moveIncremental(2000);
-  zAxis.setSpeed(5000);
-
-
-
-  cAxis.moveIncremental(2000);
-  cAxis.setSpeed(5000);
-  while(zAxis.distanceToGo() != 0.0){
-    cAxis.run();
-    zAxis.run();
+/*
+  xAxis.moveIncremental(-1600);
+  xAxis.setSpeed(-5);
+  while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HomeLim) == HIGH)){
+    xAxis.run();
   }
 
-  Serial.println("1");
-  zAxis.moveIncremental(-6000);
-  zAxis.setSpeed(-1600);
+  //move to position of holes (relative to fuselage zero)
+  zAxis.moveIncremental(float(zAxis.inToStep*2.5));
+  zAxis.setSpeed(200); //arbitrary speed
   while(zAxis.distanceToGo() != 0.0){
     zAxis.run();
   }
-
-  Serial.println("2");
-  zAxis.moveAbsolute(2000);
-  zAxis.setSpeed(-1600);
-  while(zAxis.distanceToGo() != 0.0){
-    zAxis.run();
-  }
-    Serial.println("done!");
 */
-
 }
 
 void loop() {}
+
+void spindleOn(){
+  digitalWrite(relayPin, LOW);
+}
+
+void spindleOff(){
+  digitalWrite(relayPin, HIGH);
+}
+
+bool checkLimits(){
+//make this for all movement conditions w limit switches
+return true;
+}
+
 
 //TODO: ADD TO AXIS.CPP, PASS IN 
 // input: axis enable (true = on, false = off) in order x,z
@@ -178,6 +204,7 @@ void jog(bool xEnable, bool zEnable){
       {
       xAxis.setSpeed(map(x, 0, 1023, -axisMaxSpeed, axisMaxSpeed)); //TODO: CHANGE FROM STEPS TO INCH
       xAxis.run();
+      Serial.println(checkLimits());
     }
     //move z
     if( ( (zEnable == true) && (abs(512 - z) > deadband) && (digitalRead(StpZ_HomeLim) == HIGH) && (digitalRead(StpZ_HardLim) == HIGH) )
@@ -192,33 +219,6 @@ void jog(bool xEnable, bool zEnable){
   }
   zAxis.setSpeed(0.0);
   xAxis.setSpeed(0.0);
-}
-
-void spindleOn(){
-  digitalWrite(relayPin, LOW);
-}
-
-void spindleOff(){
-  digitalWrite(relayPin, HIGH);
-}
-
-bool checkLimits(){
-  if(digitalRead(StpX_HardLim) == LOW){
-    return false;
-  }
-
-  if(digitalRead(StpX_HomeLim) == LOW){
-    return false;
-  }
-
-    if(digitalRead(StpZ_HardLim) == LOW){
-    return false;
-  }
-
-  if(digitalRead(StpZ_HomeLim) == LOW){
-    return false;
-  }
-  return true;
 }
 
 inline void spinAndMove(float stockZero, float stockEnd, float RPM, float linearSpeed){
@@ -247,14 +247,14 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //back up 
   xAxis.setSpeed(-2000);
   xAxis.moveIncremental(back);
-  while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+  while((xAxis.distanceToGo() != 0.0)){
     xAxis.run();
   }
 
   //move to stock zero z
   zAxis.setSpeed(-3000);
   zAxis.moveAbsolute(stockZeroZ);
-  while((zAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+  while((zAxis.distanceToGo() != 0.0)){
     zAxis.run();
   }
 
@@ -264,7 +264,7 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //spin c and move x at the same time
   xAxis.moveAbsolute(stockZeroX);
   cAxis.setSpeed(RPM);
-  while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+  while((xAxis.distanceToGo() != 0.0)){
     cAxis.runSpeed();
     xAxis.run();
   }
@@ -283,7 +283,7 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   //stop motor
   xAxis.moveIncremental(back);
   cAxis.setSpeed(RPM);
-  while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+  while((xAxis.distanceToGo() != 0.0)){
     cAxis.runSpeed();
     xAxis.run();
   }
@@ -292,51 +292,55 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
 
 //TODO arbitrary axis speed, change later
 void toolchange(float zWorkHome){ //pass in z zero
-  //user jogs the tool back //TODO:CHANGE TO MOVE TOOL BACK TO HOME LIMIT
-  xAxis.moveAbsolute(200);
-  xAxis.setSpeed(200);
-  while(digitalRead(StpX_HomeLim) == HIGH){
+//move x axis back for toolchange
+  xAxis.moveAbsolute(0.0);
+  xAxis.setSpeed(-1000);
+  while((xAxis.distanceToGo() != 0.0) || (digitalRead(StpX_HomeLim) == HIGH)){
     xAxis.run();
   }
-  jog(false,true);
   //change tool then hit button
   spindleOff();
   Serial.println("Spindle Off: Change tool and Press Button To Resume Program");
   while (digitalRead(buttonPin) != HIGH);
+  delay(2000);
 
   //machine moves back to original work z
   zAxis.moveAbsolute(zWorkHome);
-  zAxis.setSpeed(200);
+  zAxis.setSpeed(-2000);
   while(zAxis.distanceToGo() != 0.0){
     zAxis.run();
   }
   //user jogs to new x zero
-  jog(false,true);
+  jog(true,false);
   //done!
 }
 
 //TODO: WHEN THE LIMIT SWITCH CONTACTS THE C AXIS KEEPS GOING, FIX THIS LOL --> this issue can be fixed with jog code!!!!
 //already zeroed when this function is called
 void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam, float axial_location, int num_holes, float offset_angle){
-  xAxis.setAcceleration(30);
+
   
   //check if we need to preform a toolchange
   if(previousHoleDiam != hole_diam){
-    toolchange();
+    toolchange(zAxis.currentPosition());
   }
-  //back up 
-  xAxis.setSpeed(-1);
-  xAxis.moveIncremental(-50);
-  while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+
+  xAxis.setAcceleration(30);
+
+  /*back up 
+  xAxis.moveIncremental(-1600);
+  xAxis.setSpeed(-5);
+  while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HomeLim) == HIGH)){
     xAxis.run();
   }
 
-  //move to position of holes (relative to fuselage zero)
-  zAxis.setSpeed(200); //arbitrary speed
-  zAxis.moveIncremental(axial_location);
+  move to position of holes (relative to fuselage zero)
+  zAxis.moveIncremental(float(zAxis.inToStep*axial_location));
+  zAxis.setSpeed(-200); //arbitrary speed
   while(zAxis.distanceToGo() != 0.0){
     zAxis.run();
   }
+  */
 
   //if more than one hole, need to figure out spacing for the pattern to work
   if(num_holes > 1){
@@ -346,23 +350,23 @@ void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam
       cAxis.moveIncremental(offset_angle);
       while(cAxis.distanceToGo() != 0.0){
         cAxis.run();
-      }
+      } 
     }
 
     spindleOn();
 
     for(int x = num_holes; x>0; x--){
       //drill
-      xAxis.moveIncremental(800);
+      xAxis.moveIncremental(1600);
       xAxis.setSpeed(5);
-      while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+      while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HardLim) == HIGH)){
         xAxis.run();
       }
 
       delay(2000);
-      xAxis.moveIncremental(-800);
+      xAxis.moveIncremental(-1600);
       xAxis.setSpeed(-5);
-      while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+      while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HomeLim) == HIGH)){
         xAxis.run();
       }
       delay(2000);
@@ -390,13 +394,13 @@ void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam
     //drill
       xAxis.moveIncremental(800);
       xAxis.setSpeed(5);
-      while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+      while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HardLim) == HIGH)){
         xAxis.run();
       }
       delay(5000);
       xAxis.moveIncremental(-800);
       xAxis.setSpeed(5);
-      while((xAxis.distanceToGo() != 0.0) && (checkLimits() == true)){
+      while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HomeLim) == HIGH)){
         xAxis.run();
       }
       delay(3000);
