@@ -3,28 +3,32 @@ Pul -> White
 Dir -> Blue
 En -> Yellow
 
+Spindle 
+Enable D4
+
 Stepper X
-Pul+ 4
-Dir+ 5
-En+ 22
-Home Limit SW 18
-Hard Limit SW 19
+Pul+ A0
+Dir+ A1
+En+ D38
+Home Limit SW D3 
+Hard Limit SW D2
 
 Stepper Z
-Pul+ 6
-Dir+ 7
-En+ 22
-Home Limit SW 20
-Hard Limit SW 21
+Pul+ D46 
+Dir+ D48
+En+ A8
+Home Limit SW D18
+Hard Limit SW D19
 
 Stepper C
-Pul+ 8
-Dir+ 9
-En+ 22
+Pul+ D49 
+Dir+ D51
+En+ D53
 
-Stepper B
-Pul+ 10
-Dir+ 11
-En+ 22
+Stepper A (Previously B)
+Pul+ D36 
+Dir+ D28
+En+ D24
 
-(Updated 13-NOV-2022)
+(Updated 30-APR-2023)
+(Pinouts accroding to https://github.com/fra589/grbl-Mega-5X/wiki/grbl-Mega-5X-pinout)
