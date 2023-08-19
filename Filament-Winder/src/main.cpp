@@ -1,27 +1,32 @@
 #include "Arduino.h"
 #include "Axis.h"
 
-//stepper enable pin
-#define Stp_EN 22
-
 //x axis
-#define StpX_S 4
-#define StpX_D 5
-#define StpX_HomeLim 18 //INT pins (18,19,20,21 on ArduinoMega) are used for optimization  
-#define StpX_HardLim 19
+#define StpX_S A0
+#define StpX_D A1
+#define StpX_EN 38
+
+#define StpX_HomeLim 3 //INT pins (18,19,20,21 on ArduinoMega) are used for optimization  
+#define StpX_HardLim 2
 
 //z axis
-#define StpZ_S 6 
-#define StpZ_D 7
-#define StpZ_HomeLim 20
-#define StpZ_HardLim 21
+#define StpZ_S 46 
+#define StpZ_D 48
+#define StpZ_EN A8
+
+#define StpZ_HomeLim 18
+#define StpZ_HardLim 19
+
+//B AND C MIXED? - yes
 
 //c axis
-#define StpC_S 8
-#define StpC_D 9
+#define StpC_S 26
+#define StpC_D 28
+#define StpC_EN 24
 //b axis
-#define StpB_S 10
-#define StpB_D 11 
+#define StpB_S 36
+#define StpB_D 34 
+#define StpB_EN 30
 
 //joystick (not currently using button)
 #define vrx A10
@@ -40,10 +45,10 @@
 
 
 //TODO: all motors have different step per rotation ratios. the ones filled in below were just eyeballed 
-Axis zAxis(Stp_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 1600.0, 678.9821813 , 14000.0, 20000.0); //TODO: calibrate axis better!!!
-Axis xAxis(Stp_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 1600.0, 679.9548143, 14000.0, 20000.0); //TODO: calibrate axis
-Axis cAxis(Stp_EN, StpC_D, StpC_S,0xFF,0xFF, 6800.0, 7000.0, 140000.0, 14000.0); //add in to step conversion, could be used for circumference!!! this motor has a gearbox!!!
-Axis bAxis(Stp_EN, StpB_D, StpB_S,0xFF,0xFF, 6500.0, 6500.0, 14000.0, 20000.0); //add in to step conversion, could be used for circumference!!!
+Axis zAxis(StpX_EN, StpZ_D, StpZ_S, StpZ_HomeLim, StpZ_HardLim, 1600.0, 678.9821813 , 14000.0, 20000.0); //TODO: calibrate axis better!!
+Axis xAxis(StpZ_EN, StpX_D, StpX_S, StpX_HomeLim, StpX_HardLim, 1600.0, 679.9548143, 14000.0, 20000.0); //TODO: calibrate axis
+Axis cAxis(StpC_EN, StpC_D, StpC_S,0xFF,0xFF, 6800.0, 7000.0, 140000.0, 14000.0); //add in to step conversion, could be used for circumference!! this motor has a gearbox!!
+Axis bAxis(StpB_EN, StpB_D, StpB_S,0xFF,0xFF, 6500.0, 6500.0, 14000.0, 20000.0); //add in to step conversion, could be used for circumference!!
 
 struct point{
   float xPos;
@@ -67,6 +72,7 @@ void toolchange(float zWorkHome);
 void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam, float axial_location, int num_holes, float offset_angle);
 
 void setup() {
+  Serial.println("here");
   Serial.begin(115200);
   while(!Serial); //hold the device in loop until Serial is started
   Serial.println("Init");
@@ -96,10 +102,13 @@ void setup() {
   Serial.println("Stepper enabled, Homing carriage");
   Serial.println("Current Action: Homing X then Z");
   
-  
+  Serial.println("here");
 
   //Home X
   xAxis.homing();
+
+  Serial.println("here");
+
   //Home Z
   zAxis.homing();
   /*
@@ -110,7 +119,7 @@ void setup() {
   }
   */
 
-  //jog 
+  //jog w both axis
   //jog(true, true);
   /*
   Serial.println(zAxis.currentPosition());
@@ -122,24 +131,41 @@ void setup() {
   Serial.println(zAxis.currentPosition());
   */ 
 
+  //Serial.print("here");
+  //I LOVE SANDING
+  //void sanding(int numberOfPasses, float RPM, float linearSpeed)
+  //sanding(20000004, -420690000, 10000);
 
-  //sanding(4, -420690000, 1000);
 
-
-  //void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam, float axial_location, int num_holes, float offset_angle)
   
-  //tim's recovery piston hole pattern
+  //tim's recovery piston hole pattern side A
   
-  jog(true, true);
+  //jog(true, true);
 /*
-  zAxis.moveIncremental(float(zAxis.inToStep*2.65275));
+//6-32 med clr 
+  holePattern(0.204, -2.65625, 0.204, 60, 3, 0.0);
+
+
+  zAxis.moveIncremental(float(zAxis.inToStep*2.65625));
   zAxis.setSpeed(200); //arbitrary speed
   while(zAxis.distanceToGo() != 0.0){
     zAxis.run();
   }
-*/
-  holePattern(0.204, -2.65275, 0.204, 60, 2, 0.0);
 
+  //stop and switch drill bit.
+  while(digitalRead(buttonPin) != HIGH){}
+//8-32 med clr
+  holePattern(0.204, -2.65625, 0.204, 60, 8, 0.0);
+
+  //end program fr
+
+*/
+  //tim's recovery piston hole pattern side B
+
+//6-32 med clr
+    //holePattern(0.204, -2.65625, 0.204, 60, 8, 0.0);
+
+  /*
   zAxis.moveIncremental(float(zAxis.inToStep*0.4));
   zAxis.setSpeed(200); //arbitrary speed
   while(zAxis.distanceToGo() != 0.0){
@@ -147,7 +173,7 @@ void setup() {
   }
 
   holePattern(0.204, -0.4, 0.204, 60, 2, 0.0);
-  
+  */
 
   //jog(true, true);
   //holePattern(0.204, xAxis.currentPosition(), 0.204, 0, 6, 0.0);
@@ -169,7 +195,183 @@ void setup() {
     zAxis.run();
   }
 */
+
+//XENIA MOTHERFUCKING TWO LOWER FUSELAGE HOLE PATTERN 2023-08-17 FIBERGLASS
+
+//START BY ZERO TO BOT FUSELAGE
+jog(true, true);
+
+
+
+//
+//NEXT ZERO TO TOP FUSELAGE
+
+//
+
+//
+
+//XENIA MOTHERFUCKING TWO LOWER FUSELAGE HOLE PATTERN 2023-08-17 FIBERGLASS plan --> bottom to top --> OFFSETS ALL CW INC
+
+//START TOOL #18
+
+//MOVE 0.231" LEFT
+zAxis.moveIncremental(float(zAxis.inToStep*0.231));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }
+
+//THRUST RING 8X8-32 RADIAL HOLES OFFSET 15 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 8, -15.0); //change back to 8 holes
+
+//TOOLCHANGE LAUNCH SLUG 1/4-20 CLR OFFSET 45
+jog(true, false);
+
+delay(2000);
+//LAUNCH SLUG 1/4-20 CLR
+holePattern(0.204, -2.65625, 0.204, 60, 1, -45.0);
+
+//TOOLCHANGE 8-32 CLR #
+jog(true, false);
+
+//MOVE 1.151" LEFT
+zAxis.moveIncremental(float(zAxis.inToStep*1.151));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }
+
+//FCR 1
+//FIN CAGE FIRST OFFSET 12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -12.241);
+
+//FIN CAGE SECOND OFFSET 90-12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -77.759);
+
+//MOVE 2.833 LEFT
+zAxis.moveIncremental(float(zAxis.inToStep*2.833));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  } 
+
+//FCR 2
+//FIN CAGE FIRST OFFSET 12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -12.241);
+
+//FIN CAGE SECOND OFFSET 90-12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -77.759);
+
+//MOVE 2.833 LEFT
+zAxis.moveIncremental(float(zAxis.inToStep*2.833));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }  
+
+//FCR 3
+//FIN CAGE FIRST OFFSET 12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -12.241);
+
+//FIN CAGE SECOND OFFSET 90-12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -77.759);
+
+
+//MOVE 2.833 LEFT
+zAxis.moveIncremental(float(zAxis.inToStep*2.833));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  }  
+
+//FCR 4
+//FIN CAGE FIRST OFFSET 12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -12.241);
+
+//FIN CAGE SECOND OFFSET 90-12.241 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 4, -77.759);
+
+
+//MOVE 14.081 LEFT 
+zAxis.moveIncremental(float(zAxis.inToStep*14.081+0.0625));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  } 
+
+//*** ADJUST FOR TRUE FUSELAGE DIMENSIONS HERE
+
+//TOOLCHANGE LAUNCH SLUG 1/4-20 CLR OFFSET 45
+jog(true, false);
+
+//LAUNCH SLUG 1/4-20 CLR
+holePattern(0.204, -2.65625, 0.204, 60, 1, -45.0);
+
+//TOOLCHANGE PROP BULKHEAD #10 clr
+jog(true, false);
+
+//PROP BULKHEAD 10-32 RADIAL HOLES OFFSET 15 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 8, -15.0);
+
+
+//TOOLCHANGE 6-32 #28
+jog(true, false);
+
+//MOVE 2.389 LEFT
+zAxis.moveIncremental(float(zAxis.inToStep*2.389));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  } 
+
+//DRILL SCREW SWITCH HOLE OFFSET 107.5 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -107.5);
+
+//DRILL SCREW SWITCH HOLE OFFSET 133 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -133.0);
+
+//MOVE 0.236
+zAxis.moveIncremental(float(zAxis.inToStep*0.236));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  } 
+
+
+//DRILL SCREW SWITCH HOLE OFFSET 99.6 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -99.6);
+
+//DRILL SCREW SWITCH HOLE OFFSET 127 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -127.0);
+
+//DRILL SCREW SWITCH HOLE OFFSET 140 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -140.0);
+
+//DRILL ANTENNA HOLE OFFSET 272 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -272.0);
+
+//DRILL SCREW SWITCH HOLE OFFSET 285 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 1, -285.0);
+
+//MOVE 7.163
+zAxis.moveIncremental(float(zAxis.inToStep*7.163));
+  zAxis.setSpeed(200); //arbitrary speed
+  while(zAxis.distanceToGo() != 0.0){
+    zAxis.run();
+  } 
+
+//TOOLCHANGE 10-32 #10
+jog(true, false);
+
+// COUPLER 10-32 RADIAL HOLES OFFSET 15 DEGREES
+holePattern(0.204, -2.65625, 0.204, 60, 8, -15.0);
 }
+
+
+
+
+
+
 
 void loop() {}
 
@@ -272,6 +474,7 @@ void sanding(int numberOfPasses, float RPM, float linearSpeed){
   bool dir = 0; // 0 --> positive z direction, 1 --> negative z direction
   while(numberOfPasses >= 0){
     if(dir == 1){
+    Serial.print("here");
       spinAndMove(stockZeroZ, stockEndZ, RPM, linearSpeed);
     }else if(dir == 0){
       spinAndMove(stockEndZ, stockZeroZ, RPM, linearSpeed);
@@ -315,15 +518,17 @@ void toolchange(float zWorkHome){ //pass in z zero
   //done!
 }
 
-//TODO: WHEN THE LIMIT SWITCH CONTACTS THE C AXIS KEEPS GOING, FIX THIS LOL --> this issue can be fixed with jog code!!!!
+//TODO: WHEN THE LIMIT SWITCH CONTACTS THE C AXIS KEEPS GOING, FIX THIS LOL --> this issue can be fixed with jog code!!
 //already zeroed when this function is called
 void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam, float axial_location, int num_holes, float offset_angle){
 
   
   //check if we need to preform a toolchange
+  /*
   if(previousHoleDiam != hole_diam){
     toolchange(zAxis.currentPosition());
   }
+  */
 
   xAxis.setAcceleration(30);
 
@@ -345,7 +550,7 @@ void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam
   //if more than one hole, need to figure out spacing for the pattern to work
   if(num_holes > 1){
     float holeSpacing = cAxis.stepPerRevolution/num_holes;
-
+    offset_angle = (cAxis.stepPerRevolution/360)*offset_angle;
     if(offset_angle != 0.0){
       cAxis.moveIncremental(offset_angle);
       while(cAxis.distanceToGo() != 0.0){
@@ -357,16 +562,16 @@ void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam
 
     for(int x = num_holes; x>0; x--){
       //drill
-      xAxis.moveIncremental(1600);
+      xAxis.moveIncremental(800);
       xAxis.setSpeed(5);
       while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HardLim) == HIGH)){
         xAxis.run();
       }
 
       delay(2000);
-      xAxis.moveIncremental(-1600);
+      xAxis.moveIncremental(-800);
       xAxis.setSpeed(-5);
-      while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HomeLim) == HIGH)){
+      while((xAxis.distanceToGo() != 0.0) /*&& (digitalRead(StpX_HomeLim) == HIGH)*/){
         xAxis.run();
       }
       delay(2000);
@@ -375,15 +580,26 @@ void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam
       while(cAxis.distanceToGo() != 0.0){
         cAxis.run();
       }
+
+
+      
     }
 
+
     spindleOff();
+    if( offset_angle != 0.0){   //reset the zero
+      cAxis.moveIncremental(- offset_angle);
+      while(cAxis.distanceToGo() != 0.0){
+        cAxis.run();
+      }      
+    }
     
 
   }else{
     //just drill the hole
 
     spindleOn();
+    offset_angle = (cAxis.stepPerRevolution/360)*offset_angle;
 
     if( offset_angle != 0.0){
       cAxis.moveIncremental(offset_angle);
@@ -397,16 +613,25 @@ void holePattern(float previousHoleDiam, float fuselageDiameter, float hole_diam
       while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HardLim) == HIGH)){
         xAxis.run();
       }
-      delay(5000);
+
+      delay(2000);
       xAxis.moveIncremental(-800);
-      xAxis.setSpeed(5);
-      while((xAxis.distanceToGo() != 0.0) && (digitalRead(StpX_HomeLim) == HIGH)){
+      xAxis.setSpeed(-5);
+      while((xAxis.distanceToGo() != 0.0) /*&& (digitalRead(StpX_HomeLim) == HIGH)*/){
         xAxis.run();
       }
-      delay(3000);
+      delay(2000);
 
     spindleOff();
+
+    if( offset_angle != 0.0){   //reset the zero
+      cAxis.moveIncremental(- offset_angle);
+      while(cAxis.distanceToGo() != 0.0){
+        cAxis.run();
+      }      
+    }
 
   }
   
 }
+
